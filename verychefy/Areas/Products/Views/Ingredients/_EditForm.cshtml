@@ -1,0 +1,66 @@
+﻿@using App_a_matic.Helper;
+@using verychefy.Models.Products;
+@model verychefy.Models.Products.Ingredients
+@{
+    Layout = null;
+    List<Types> types = (new Types()).GetInParallel<Types>();
+    string name ="";
+    if (Model != null) { name = Model.CommonName; };
+}
+
+@using (Html.BeginForm()) {
+    @Html.ValidationSummary(true)
+    <fieldset>
+        <legend>Ingredient @name @ViewBag.Action </legend>
+        @if (ViewBag.Action == "Edit") {
+        <div class="editor-label">
+            @Html.LabelFor(model => model.Ingredient_pk)
+        </div>
+        <div class="editor-field">
+            @Html.DisplayFor(model => model.Ingredient_pk)
+        </div>
+        }
+        <div class="editor-label">
+            @Html.LabelFor(model => model.CommonName)
+        </div>
+        <div class="editor-field">
+            @Html.EditorFor(model => model.CommonName)
+            @Html.ValidationMessageFor(model => model.CommonName)
+        </div>
+
+        <div class="editor-label">
+            @Html.LabelFor(model => model.Type_fk)
+        </div>
+            <div class="editor-field">
+                @Html.DropDownListFor(model => model.Type_fk
+                    , new SelectList(types, "Type_pk", "Classification", "Type_fk")
+                )
+                @Html.ValidationMessageFor(model => model.Type_fk)
+            </div>
+
+        <div class="editor-label">
+            @Html.LabelFor(model => model.Details)
+        </div>
+        <div class="editor-field">
+            @Html.TextAreaFor(model => model.Details)
+            @Html.ValidationMessageFor(model => model.Details)
+        </div>
+
+        <div class="editor-label">
+            @Html.LabelFor(model => model.MediaURL)
+        </div>
+        <div class="editor-field">
+            @Html.EditorFor(model => model.MediaURL)
+            @Html.ValidationMessageFor(model => model.MediaURL)
+        </div>
+
+        <p>
+            <input type="submit" value="Save" />
+        </p>
+    </fieldset>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
+

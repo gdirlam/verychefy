@@ -1,0 +1,53 @@
+﻿@model IEnumerable<verychefy.Models.Products.Ingredients>
+@using App_a_matic.Helper;
+@using verychefy.Models.Products;
+@using System.Linq;
+@{
+    Layout = null;
+    List<Types> types = (new Types()).GetInParallel<Types>();
+}
+<!DOCTYPE html>
+<html >
+<head>
+    <title>Index</title>
+ <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.5/angular.min.js"></script>
+</head>
+<body>
+    <p>
+        @Html.ActionLink("Create New", "Create")
+    </p>
+    <table>
+        <tr>
+            <th></th>
+            <th>Ingredient_pk </th>
+            <th>CommonName </th>
+            <th>Type_fk </th>
+        </tr>
+        @foreach (var item in Model) {
+            <tr>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.Ingredient_pk }) | @*      @Html.ActionLink("Details", "Details", new {  id=item.Ingredient_pk  }) | *@
+                    @Html.ActionLink("Delete", "Delete", new { id = item.Ingredient_pk })
+                </td>
+                <td>
+                    @item.Ingredient_pk
+                </td>
+                <td>
+                    @item.CommonName
+                </td>
+                <td>
+                    @{
+                    var type = types.FirstOrDefault<Types>(t => t.Type_pk == item.Type_fk) ;
+                    }
+                    @(type!=null?type.Classification : "")
+                </td>
+            </tr>
+        }
+    </table>
+   
+      <input type="text" ng-model="yourName" placeholder="Enter a name here">
+      <hr>
+      <h1>Hello {{yourName}}!</h1>
+</div>
+</body>
+</html>

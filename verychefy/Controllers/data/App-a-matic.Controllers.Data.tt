@@ -1,0 +1,135 @@
+﻿<#@ template language="C#" hostspecific="true" #><#@ 
+output extension="cs" #><#@ 
+assembly name="System.Xml" #><#@ 
+assembly name="Microsoft.SqlServer.ConnectionInfo, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" #><#@ 
+assembly name="Microsoft.SqlServer.Smo, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" #><#@ 
+assembly name="Microsoft.SqlServer.Management.Sdk.sfc, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" #><#@ 
+assembly name="EnvDTE" #><#@ 
+import namespace="EnvDTE" #><#@ 
+import namespace="Microsoft.SqlServer.Management.Smo" #><#@ 
+import namespace="Microsoft.SqlServer.Management.Common" #><#@ 
+import namespace="System.Collections.Generic" #><#
+	var serviceProvider = this.Host as IServiceProvider;
+	var dte = serviceProvider.GetService(typeof(DTE)) as DTE;
+	Document activeDoc = dte.ActiveDocument;
+	Project proj = activeDoc.ProjectItem.ContainingProject; 
+	string NameSpace = proj.Name; 
+#>using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+using App_a_matic;
+using App_a_matic.Orm; 
+using App_a_matic.Helper;
+using <#=NameSpace#>.Models.Products;
+
+namespace <#=NameSpace#>.Data.Controllers {
+
+<#
+	Microsoft.SqlServer.Management.Smo.Server Srv = new Microsoft.SqlServer.Management.Smo.Server("(local)");
+    Microsoft.SqlServer.Management.Smo.Database db = new Microsoft.SqlServer.Management.Smo.Database( Srv, "food");
+			
+#><#
+            db.Refresh();
+            foreach (Microsoft.SqlServer.Management.Smo.Schema schema in db.Schemas) {
+#><#
+				if( schema.Name.IndexOf("db_") >= 0 || schema.Name.IndexOf("aspnet_") >= 0 || schema.Name == "sys" || schema.Name == "guest" || schema.Name == "INFORMATION_SCHEMA" ){
+					continue; 
+	            }
+				bool schemahastables = false; 
+				foreach (Microsoft.SqlServer.Management.Smo.Table table in db.Tables) {
+				if(table.Schema == schema.Name){
+					schemahastables = true; 
+				}
+				}
+				if(!schemahastables){
+				continue; 
+				}
+
+#>
+	namespace <#=schema.Name #>{
+
+	    using  <#=NameSpace#>.Models.<#=schema.Name #>;
+<#
+
+				
+				foreach (Microsoft.SqlServer.Management.Smo.Table table in db.Tables) {
+	                if( table.Schema != schema.Name || table.Name == "sysdiagrams" || table.Name == "PaymentMethod" || table.Name.IndexOf("aspnet_") >= 0 ){
+					    continue; 
+		            }
+		            table.Refresh();
+				
+#>
+
+			public class <#=table.Name#>Controller : App_a_matic.Controllers.ApiController {
+			
+			#region "<#=table.Name#>: GET, PUT, POST, DELETE"
+
+				// GET Data/<#=schema.Name #>/<#=table.Name#>
+				public List<<#=table.Name#>> Get() {
+					return base.Get<<#=table.Name#>>(); 
+				}
+				// GET Data/<#=schema.Name #>/<#=table.Name#>/1
+				public <#=table.Name#> Get(int id) {
+					return base.Get<<#=table.Name#>>(id);
+				}
+				// POST Data/<#=schema.Name #>/<#=table.Name#>
+				public void Post([FromBody]IOrmModel model) {
+					base.Post<<#=table.Name#>>((IOrmModel)model);
+				}
+				// PUT Data/<#=schema.Name #>/<#=table.Name#>/1
+				public void Put(int id, [FromBody] IOrmModel model) {
+					base.Put<<#=table.Name#>>(id, (IOrmModel)model);
+				}
+				// DELETE Data/<#=schema.Name #>/<#=table.Name#>/1
+				public void Delete(int id) {
+					base.Delete<<#=table.Name#>>(id);
+				}
+
+			#endregion
+
+			}
+<#
+				}
+				#>
+
+	}<#//End Schema.Namespace#>
+				
+				<#
+			}
+#>
+
+}<#//End Models.Namespace#>
+<#+
+    EnvDTE.Project GetCurrentProject(EnvDTE.DTE dte) {
+        Project proj = null;
+
+
+        if (dte != null && dte.Solution.Count > 0) {
+
+            if (dte.Solution.Projects.Count > 0) {
+
+                Document activeDoc = dte.ActiveDocument;
+                Project tempProj = null;
+                ProjectItem projItem = null;
+                String itemFullName;
+                for (int i = 1; i <= dte.Solution.Projects.Count; i++) {
+                    tempProj = dte.Solution.Projects.Item(i);
+                    for (int j = 1; j <= tempProj.ProjectItems.Count; j++) {
+                        projItem = tempProj.ProjectItems.Item(j);
+                        itemFullName = projItem.get_FileNames(1);
+						WriteLine("//" + itemFullName);
+
+                        if (itemFullName.Equals(activeDoc.FullName)) {
+                            proj = tempProj;
+                            return proj;
+                            }
+                        }
+                    }
+                }
+            }
+        return proj;
+        }
+#>

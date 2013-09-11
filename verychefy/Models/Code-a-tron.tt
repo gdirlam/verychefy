@@ -1,0 +1,276 @@
+﻿<#@ template language="C#" hostspecific="true" #><#@
+ output extension="cs" #><#@
+ assembly name="System.Xml" #><#@
+ assembly name="Microsoft.SqlServer.ConnectionInfo, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" #><#@
+ assembly name="Microsoft.SqlServer.Smo, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" #><#@
+assembly name="Microsoft.SqlServer.Management.Sdk.sfc, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" #><#@ 
+assembly name="EnvDTE" #><#@ 
+import namespace="EnvDTE" #><#@
+ import namespace="Microsoft.SqlServer.Management.Smo" #><#@
+ import namespace="Microsoft.SqlServer.Management.Common" #><#@
+ import namespace="System.Collections.Generic" #><#
+	var serviceProvider = this.Host as IServiceProvider;
+	var dte = serviceProvider.GetService(typeof(DTE)) as DTE;
+	Document activeDoc = dte.ActiveDocument;
+	Project proj = activeDoc.ProjectItem.ContainingProject; 
+	string NameSpace = proj.Name; 
+#>using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.Mvc; 
+using System.Runtime.Serialization; 
+using App_a_matic; 
+using App_a_matic.Helper;
+using App_a_matic.Orm;
+
+namespace <#=NameSpace#>.Models {
+<#
+	Microsoft.SqlServer.Management.Smo.Server Srv = new Microsoft.SqlServer.Management.Smo.Server("(local)");
+    Microsoft.SqlServer.Management.Smo.Database db = new Microsoft.SqlServer.Management.Smo.Database( Srv, "food");
+			OrmModeling MetaDb = new OrmModeling(); 
+#><#
+            db.Refresh();
+            foreach (Microsoft.SqlServer.Management.Smo.Schema schema in db.Schemas) {
+#><#
+				if( schema.Name.IndexOf("db_") >= 0 || schema.Name.IndexOf("aspnet_") >= 0 || schema.Name == "sys" || schema.Name == "guest" || schema.Name == "INFORMATION_SCHEMA" ){
+					continue; 
+	            }
+				bool schemahastables = false; 
+				foreach (Microsoft.SqlServer.Management.Smo.Table table in db.Tables) {
+				if(table.Schema == schema.Name){
+					schemahastables = true; 
+				}
+				}
+				if(!schemahastables){
+				continue; 
+				}
+
+#>
+	namespace <#=schema.Name #>{
+<#
+				foreach (Microsoft.SqlServer.Management.Smo.Table table in db.Tables) {
+	                if( table.Schema != schema.Name || table.Name == "sysdiagrams" || table.Name == "PaymentMethod" || table.Name.IndexOf("aspnet_") >= 0 ){
+					    continue; 
+		            }
+		            table.Refresh();
+	                foreach (ForeignKey key in table.ForeignKeys )
+	                {
+	                    string refTableName = string.Format("[{0}].[{1}]", key.ReferencedTableSchema, key.ReferencedTable);
+	                    Microsoft.SqlServer.Management.Smo.Table refTable = db.Tables[refTableName];
+
+	                    db.Tables[key.ReferencedTable, key.ReferencedTableSchema].Indexes.Refresh(); 
+	                    Microsoft.SqlServer.Management.Smo.IndexedColumn PrimaryKeyColumn =  db.Tables[key.ReferencedTable, key.ReferencedTableSchema].Indexes[key.ReferencedKey].IndexedColumns[0];
+	                    MetaDb.Relationships.Add(new MetaRelationship(key.ReferencedTableSchema, key.ReferencedTable, PrimaryKeyColumn.Name, table.Schema.ToString(), table.Name, key.Columns[0].Name));
+					
+					}					
+				
+				}
+				
+				foreach (Microsoft.SqlServer.Management.Smo.Table table in db.Tables) {
+	                if( table.Schema != schema.Name || table.Name == "sysdiagrams" || table.Name == "PaymentMethod" || table.Name.IndexOf("aspnet_") >= 0 ){
+					    continue; 
+		            }
+		            table.Refresh();
+				
+#>
+			public class <#=table.Name#> : IOrmModel {
+<#
+		string comma = ""; 
+		foreach (Microsoft.SqlServer.Management.Smo.Column column in table.Columns) {
+			if (column.DataType.ToString() != "image" && column.Name.IndexOf("Password") == -1  ) {	
+#>
+				[AdditionalMetadata("ORM", true)]<#
+				if (column.InPrimaryKey) {
+#>
+				[AdditionalMetadata("ORM_PrimaryKey", true)]<#}#>
+				public <#=FormatDataType(column)#> <#=column.Name#> { get; set; }
+<#
+				}
+			}
+#>
+				[IgnoreDataMember]
+				public DataOrmContext OrmContext { get; set; }
+				public  <#=table.Name#>() {
+					this.OrmContext = new DataOrmContext {
+						Create    = "<#=schema.Name #>.<#=table.Name#>Create"
+						 , Read   = "<#=schema.Name #>.<#=table.Name#>Get"
+						 , Update = "<#=schema.Name #>.<#=table.Name#>Update"
+						 , Delete = "<#=schema.Name #>.<#=table.Name#>Delete"
+					};
+				}
+			}
+<#
+				}
+				#>
+	}<#//End Schema.Namespace#>
+				<#
+			}
+
+#>
+
+}<#//End Models.Namespace#>
+<#+
+	private static string PrimaryKey(Microsoft.SqlServer.Management.Smo.Table table ) {
+		string retval = string.Empty;		
+		foreach (Microsoft.SqlServer.Management.Smo.Column column in table.Columns) {
+                    if (column.InPrimaryKey) {	
+						return  column.Name; 
+					}
+				}
+		return retval; 
+	}
+#><#+
+        public class OrmModeling {
+            public OrmModeling(){
+                Relationships = new List<MetaRelationship>(); 
+            }
+            public List<MetaRelationship> Relationships;
+        }
+        public class MetaRelationship {
+            public MetaRelationship(MetaKey PrimaryKey, MetaKey ForeignKey)
+            {
+                this.PrimaryKeyColumn = PrimaryKey ;
+                this.ForeignKeyColumn = ForeignKey;
+            }
+            public MetaRelationship(string PrimarySchemaName, string PrimaryTableName, string PrimaryKey, string ForeignSchemaName, string ForeignTableName, string ForeignKey)
+            {
+                this.PrimaryKeyColumn = new MetaKey(PrimarySchemaName, PrimaryTableName, PrimaryKey);
+                this.ForeignKeyColumn = new MetaKey(ForeignSchemaName, ForeignTableName, ForeignKey);
+            }
+
+            public MetaKey PrimaryKeyColumn { get; set;}
+            public MetaKey ForeignKeyColumn { get; set;}
+        }
+
+
+        public class MetaKey
+        {
+            public MetaKey(string SchemaName, string TableName, string KeyName) {
+                this.SchemaName = SchemaName; 
+                this.TableName = TableName;
+                this.KeyName = KeyName;
+            }
+            public string SchemaName { get; set; }
+            public string TableName { get; set;}
+            public string KeyName { get; set;}
+
+        }		
+#><#+
+
+
+private static string FormatDataType(Column col) {
+            string retVal = string.Empty;
+
+            switch (col.DataType.ToString())
+            {
+                case "xml":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "varcharmax":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "nvarcharmax":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "uniqueidentifier":
+                    retVal = string.Format("{0}", "System.Guid");
+                    break;
+                case "bit":
+                    retVal = string.Format("{0}", "bool");
+                    break;
+                case "datetime":
+                    retVal = string.Format("{0}", "System.DateTime");
+                    break;
+                case "text":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "ntext":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "money":
+                    retVal = string.Format("{0}", "decimal");
+                    break;
+                case "float":
+                    retVal = string.Format("{0}", "decimal");
+                    break;
+                case "real":
+                    retVal = string.Format("{0}", "decimal");
+                    break;
+                case "int":
+                    retVal = string.Format("{0}", "int");
+                    break;
+                case "char":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "nchar":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "varchar":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "nvarchar":
+                    retVal = string.Format("{0}", "string");
+                    break;
+                case "binary":
+                    retVal = string.Format("{0}", "byte");
+                    break;
+                case "varbinary":
+                    retVal = string.Format("{0}", "byte");
+                    break;
+                case "bigint":
+                    retVal = string.Format("{0}", "int");
+                    break;
+                case "decimal":
+                    retVal = string.Format("{0}", "decimal");
+                    break;
+                default:
+                    retVal = string.Format("{0}", "string");
+                    break;
+            }
+
+            return isNullable(retVal, col.Nullable ) ;
+
+        }   
+	
+	private static string isNullable( string DataType, bool Nullable) {
+		if( DataType == "int" ){
+			return DataType + "?";
+		}
+		if( Nullable && DataType != "string" ){
+			return DataType + "?";
+		}
+		else{
+			return DataType; 
+		}
+	} 	
+#><#+
+    EnvDTE.Project GetCurrentProject(EnvDTE.DTE dte) {
+        Project proj = null;
+
+
+        if (dte != null && dte.Solution.Count > 0) {
+
+            if (dte.Solution.Projects.Count > 0) {
+
+                Document activeDoc = dte.ActiveDocument;
+                Project tempProj = null;
+                ProjectItem projItem = null;
+                String itemFullName;
+                for (int i = 1; i <= dte.Solution.Projects.Count; i++) {
+                    tempProj = dte.Solution.Projects.Item(i);
+                    for (int j = 1; j <= tempProj.ProjectItems.Count; j++) {
+                        projItem = tempProj.ProjectItems.Item(j);
+                        itemFullName = projItem.get_FileNames(1);
+						WriteLine("//" + itemFullName);
+
+                        if (itemFullName.Equals(activeDoc.FullName)) {
+                            proj = tempProj;
+                            return proj;
+                            }
+                        }
+                    }
+                }
+            }
+        return proj;
+        }
+#>

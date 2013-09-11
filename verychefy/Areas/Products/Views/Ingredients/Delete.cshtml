@@ -1,0 +1,42 @@
+﻿@model verychefy.Models.Products.Ingredients
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Delete</title>
+</head>
+<body>
+    <h3>Are you sure you want to delete this?</h3>
+    <fieldset>
+        <legend>Ingredients</legend>
+    
+        <div class="display-label">Ingredient_pk</div>
+        <div class="display-field">@Model.Ingredient_pk</div>
+    
+        <div class="display-label">CommonName</div>
+        <div class="display-field">@Model.CommonName</div>
+    
+        <div class="display-label">Type_fk</div>
+        <div class="display-field">@Model.Type_fk</div>
+
+        <div class="display-label">Details</div>
+        <div class="display-field">@Model.Details</div>
+
+                <div class="display-label">MediaURL</div>
+        <div class="display-field">@Model.MediaURL</div>
+    </fieldset>
+    @using (Html.BeginForm()) {
+        <p>
+            <input type="submit" value="Delete" /> |
+            @Html.ActionLink("Back to List", "Index")
+        </p>
+    }
+    
+</body>
+</html>
+

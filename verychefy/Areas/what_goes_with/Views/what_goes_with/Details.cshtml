@@ -1,0 +1,33 @@
+﻿@model verychefy.Models.Products.Ingredients
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Details</h2>
+<ul>
+<li><a href="/">home</a></li>
+<li>
+@Html.ActionLink("<- Back", "List")
+</li>
+</ul>
+
+<fieldset>
+    <legend>Ingredients</legend>
+
+    <div class="display-label">
+         @Html.DisplayNameFor(model => model.Ingredient_pk)
+    </div>
+    <div class="display-field">
+        @Html.DisplayFor(model => model.Ingredient_pk)
+    </div>
+
+    <div class="display-label">
+         @Html.DisplayNameFor(model => model.CommonName)
+    </div>
+    <div class="display-field">
+        @Html.DisplayFor(model => model.CommonName)
+    </div>
+
+  
+</fieldset>

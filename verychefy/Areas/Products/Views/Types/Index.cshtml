@@ -1,0 +1,93 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+@*<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>*@
+<link href="//netdna.bootstrapcdn.com/bootswatch/2.3.1/spruce/bootstrap.min.css"
+    rel="stylesheet">
+@*<script src="/Scripts/history.js/history.js" type="text/javascript"></script>
+<script src="/Scripts/history.js/history.adapter.jquery.js" type="text/javascript"></script>
+<script src="/Scripts/history.js/history.html4.js" type="text/javascript"></script>*@
+
+
+<script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-2.2.0.js"></script>
+<script src="/Scripts/Chefy/ChefyCore/Chefy.Core.js" type="text/javascript"></script>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<!-- 
+requires:
+    bootstrap
+    knockout
+    cheffy{custom}
+    knockout models{custom}
+
+    //jquery
+-->
+<!-- 
+uses: 
+    (GET, LIST, DELETE) /Data/Products/Types/{?id}
+-->
+<style>
+   html, body{ width: 100%; height: 100%; }
+  .header{ position: fixed; width: 100%; height:  210px; background-color:  white; margin-left: 0; left: 0; border-bottom: solid 1px #dcdcdc; }
+  .hero-unit {  margin-top: 10px; margin-left: 40px;  margin-right: 40px; } 
+  .container .row{margin-top:  230px;} 
+</style>
+
+<script id="pageload">
+
+    Chefy.Core({ Log: false, Prototype: true }).Loader()
+            .Use("Chefy.Assert")
+            .Use("Chefy.Core.EcmaCompatibility")
+            .Use("Chefy.Core.Socket")
+            .Use("Chefy.Helper.String")
+            .Use("Chefy.Models.Products.Types")
+        .Load()
+
+</script>
+
+<div class="container">
+<div class="header">
+    <div class="hero-unit">
+        <h1>Products.Types</h1>
+    </div>
+
+</div>
+
+   <div class="row">
+<div class="span10">
+    <ul class="breadcrumb bootstrap">
+      <li>
+        <a href="/">Home</a> <span class="divider">&gt;</span>
+      </li>
+      <li>
+        <a href="/products">Tutorials</a> <span class="divider">&gt;</span>
+      </li>
+      <li class="active">types</li>
+    </ul>
+</div>
+
+        <div class="span8 knockout-template">
+            <ul data-bind="foreach: Types">
+                <li>
+                    <p>
+                        <span class="icon-user"></span>First name: <strong data-bind="text: Classification"></strong>
+                    </p>
+                    <p>
+                        <span class="icon-th-large"></span>First name: <strong data-bind="text: Type_pk"></strong>
+                        <a class="btn" href="#" data-bind='click: Log'>Log This</a>
+                    </p>
+                </li>
+            </ul>
+        </div>
+        <div class="span4 knockout-template">
+            <h2>Box Number 3</h2>
+            <p>
+                foo foo foo -- ingredients -- ingredients -- food... 
+            </p>
+            <p>
+                  <a class="btn" href="#" data-bind='event:{ click: KnockOutEvent}'>Click meeee &raquo;</a>
+            </p>
+        </div>
+    </div>
+</div>

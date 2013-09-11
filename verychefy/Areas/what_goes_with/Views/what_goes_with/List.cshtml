@@ -1,0 +1,40 @@
+﻿@model IEnumerable<verychefy.Models.Products.Ingredients>
+
+@{
+    ViewBag.Title = "List";
+}
+
+<h2>List</h2>
+<ul>
+<li><a href="/">home</a></li>
+<li><a href="../"><- back</a></li>
+</ul>
+
+<table>
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Ingredient_pk)
+        </th>
+        <th>
+            Choose Ingredient
+        </th>
+
+
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ingredient_pk)
+        </td>
+        <td>
+        <a href="/what_goes_with/@item.CommonName">
+            @Html.DisplayFor(modelItem => item.CommonName)
+            </a>
+        </td>
+
+
+    </tr>
+}
+
+</table>

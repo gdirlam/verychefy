@@ -1,0 +1,66 @@
+﻿//depends on JQuery <<gonna go away>>
+//depends on Knockout
+var Chefy = Chefy || Models
+Chefy.Models = Chefy.Pages || {};
+Chefy.Models.Products = Chefy.Models.Products || {};
+
+Chefy.Models.Products.Types = (function (base) {
+    base.model = null;
+    base.viewModel = function () {
+        var self = {};
+        self.Types = null;
+        self.KnockOutEvent = function () {
+            alert('Knock Out!')
+        }
+        self.setTypes = function (data) {
+            self.Types = data.map(function (el) {
+                //for each element in data...
+                el.Log = function () {
+                    alert('Knock Out!')
+                    console.log(el)
+                }
+                return el;
+            })
+        };
+        return self;
+    }
+    base.init = function () {
+        // this function will automatically get called from the autoloader.
+        base.model = base.viewModel()  // initilize our viewmodel.
+        base.Get(); // get our list from rest, <<this will be page load>..
+    };
+    base.requires = ['Socket'];
+    base.Delete = function (key) {
+        $.ajax({
+            url: '/Data/Products/Types/' + (key || '')
+                , contentType: 'application/json'
+                , dataType: 'json'
+                , type: 'DELETE'
+                , success: function (result) { base.GetSuccess(result) }
+        });
+    }
+    base.Get = function (key) {
+        Chefy.Core.Socket.Domain({
+            Url: '/Data/Products/Types/' + (key || '')
+            , Type: "GET"
+           , Func: function (result) { base.GetSuccess(result) }
+        });
+    };
+    base.GetSuccess = function (result) {
+        if (!Array.isArray(result)) {
+            result = [result];
+        }
+        base.model.setTypes(result)
+
+        ko.applyBindings(base.model);
+    };
+    Chefy.onReady(function () { base.init() });
+    return base
+} (Chefy.Models.Products.Types || {}));
+
+
+
+
+
+
+//ko.mapping.fromJSON
